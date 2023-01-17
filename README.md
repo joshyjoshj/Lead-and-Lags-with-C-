@@ -59,15 +59,15 @@ microbenchmark(mutate(data,returns_lag_4 = lag(returns,4)),
                       shiftColumnDown(data,"returns",4))
 ```
 
-    ## Unit: microseconds
+    ## Unit: milliseconds
     ##                                                             expr      min
-    ##                    mutate(data, returns_lag_4 = lag(returns, 4)) 1916.600
-    ##  data.table(data)[, `:=`(lag4, shift(returns, 4, type = "lag"))] 1252.301
-    ##                              shiftColumnDown(data, "returns", 4)  531.500
-    ##         lq     mean   median       uq       max neval
-    ##  3602.5505 4519.982 4450.651 5030.651 16668.201   100
-    ##  1617.3510 2586.011 2472.001 2782.651 26494.102   100
-    ##   722.9505 1187.538 1208.050 1422.351  5351.301   100
+    ##                    mutate(data, returns_lag_4 = lag(returns, 4)) 5.734501
+    ##  data.table(data)[, `:=`(lag4, shift(returns, 4, type = "lag"))] 3.098702
+    ##                              shiftColumnDown(data, "returns", 4) 1.464901
+    ##        lq      mean    median        uq       max neval
+    ##  9.052601 10.772530 10.527952 12.316051 18.296701   100
+    ##  4.646701  6.953574  6.354800  7.463801 45.149801   100
+    ##  2.350850  3.134992  3.041501  3.614152  9.350602   100
 
 This would return a dataframe such as:
 
@@ -83,6 +83,82 @@ This would return a dataframe such as:
 
 This function is the natural extension of the previous lag function.
 This time instead of one lag calculated for a given n each lag up to n
-is calculated and added as a column.
+is calculated and added as a column. It was quite easy to modify the
+previous code as I just had to add an outer loop and slightly adjust the
+if statements for the assignment.
 
-\`\`\`
+``` cpp
+#include <Rcpp.h>
+using namespace Rcpp;
+
+DataFrame shiftColumnDownMulti(DataFrame df, std::string column, int n) {
+  // Get the number of rows in the dataframe
+  int nrow = df.nrows();
+
+  // Get the index of the column to be shifted
+  int col_index = df.findName(column);
+  
+  // Get the column To be shifted as a numeric vector
+  NumericVector col = as<NumericVector>(df[col_index]);
+
+  // Loop through each shift value
+  for (int i = 1; i <= n; i++) {
+    // Create a new column to store the shifte values
+    NumericVector shifted_column(nrow);
+    
+    // Fill in the shifted column values
+    for (int j = 0; j < nrow; j++) {
+      // Check if the current row minus the shift value is greater than or equal to 0
+      if (j-i >= 0) {
+        shifted_column[j] = col[j-i];
+      } else {
+        shifted_column[j] = NA_REAL;
+      }
+    }
+    
+    
+    // Add the shifted column to the dataframe
+    df[column + "_" + "lag_" + std::to_string(i)] = shifted_column;
+  }
+  
+  return df;
+}
+```
+
+Microbenching:
+
+``` r
+microbenchmark(tidyAR::ar_df(data,y="returns",p=45),
+                               tk_augment_lags(data,returns, .lags=1:45),
+                               shiftColumnDownMulti(data,"returns",45))
+```
+
+    ## Unit: milliseconds
+    ##                                          expr     min       lq     mean
+    ##    tidyAR::ar_df(data, y = "returns", p = 45) 26.1576 38.16110 53.42758
+    ##  tk_augment_lags(data, returns, .lags = 1:45) 26.6599 37.28965 43.25343
+    ##     shiftColumnDownMulti(data, "returns", 45) 11.0947 12.44180 15.99891
+    ##    median       uq      max neval
+    ##  43.92660 54.83705 686.6253   100
+    ##  39.91925 47.53980  67.2704   100
+    ##  14.02810 19.16485  32.1916   100
+
+As you can see my tidyAR package function is not very quick and I’m
+working on implementing these functions in the package to speed it up.
+
+This would return a dataframe such as:
+
+    ##        returns       double      triple returns_lag_1 returns_lag_2
+    ## 1 -0.010608477 -0.021216955 -0.03182543            NA            NA
+    ## 2 -0.026592845 -0.053185690 -0.07977853  -0.010608477            NA
+    ## 3 -0.001919660 -0.003839320 -0.00575898  -0.026592845  -0.010608477
+    ## 4  0.003804892  0.007609785  0.01141468  -0.001919660  -0.026592845
+    ## 5  0.009540750  0.019081501  0.02862225   0.003804892  -0.001919660
+    ## 6  0.010264892  0.020529783  0.03079468   0.009540750   0.003804892
+    ##   returns_lag_3 returns_lag_4
+    ## 1            NA            NA
+    ## 2            NA            NA
+    ## 3            NA            NA
+    ## 4   -0.01060848            NA
+    ## 5   -0.02659284   -0.01060848
+    ## 6   -0.00191966   -0.02659284
