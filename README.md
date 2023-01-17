@@ -51,17 +51,38 @@ DataFrame shiftColumnDown(DataFrame df, std::string column, int n) {
 }
 ```
 
-Microbenching against ’dplyr::lag\`:
+Microbenching:
 
 ``` r
 microbenchmark(mutate(data,returns_lag_4 = lag(returns,4)),
-                               shiftColumnDown(data,"returns",4))
+                      data.table(data)[, lag4 := shift(returns,4,type = "lag")],
+                      shiftColumnDown(data,"returns",4))
 ```
 
-    ## Unit: milliseconds
-    ##                                           expr      min       lq     mean
-    ##  mutate(data, returns_lag_4 = lag(returns, 4)) 6.299601 8.159600 9.506509
-    ##            shiftColumnDown(data, "returns", 4) 1.489300 2.239251 2.889154
-    ##    median        uq       max neval
-    ##  9.061751 10.926901 14.302401   100
-    ##  2.856751  3.242252  9.150001   100
+    ## Unit: microseconds
+    ##                                                             expr      min
+    ##                    mutate(data, returns_lag_4 = lag(returns, 4)) 1916.600
+    ##  data.table(data)[, `:=`(lag4, shift(returns, 4, type = "lag"))] 1252.301
+    ##                              shiftColumnDown(data, "returns", 4)  531.500
+    ##         lq     mean   median       uq       max neval
+    ##  3602.5505 4519.982 4450.651 5030.651 16668.201   100
+    ##  1617.3510 2586.011 2472.001 2782.651 26494.102   100
+    ##   722.9505 1187.538 1208.050 1422.351  5351.301   100
+
+This would return a dataframe such as:
+
+    ##        returns       double      triple returns_lag_4
+    ## 1 -0.010608477 -0.021216955 -0.03182543            NA
+    ## 2 -0.026592845 -0.053185690 -0.07977853            NA
+    ## 3 -0.001919660 -0.003839320 -0.00575898            NA
+    ## 4  0.003804892  0.007609785  0.01141468            NA
+    ## 5  0.009540750  0.019081501  0.02862225   -0.01060848
+    ## 6  0.010264892  0.020529783  0.03079468   -0.02659284
+
+## Creating Multiple Lags
+
+This function is the natural extension of the previous lag function.
+This time instead of one lag calculated for a given n each lag up to n
+is calculated and added as a column.
+
+\`\`\`

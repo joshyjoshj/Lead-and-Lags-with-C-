@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #packages
 library(Rcpp)
 library(tidyverse)
+library(data.table)
 library(tidyAR)
 library(microbenchmark)
 
@@ -105,10 +106,22 @@ DataFrame shiftColumnDown(DataFrame df, std::string column, int n) {
 
 ```
 
-Microbenching against 'dplyr::lag`:
+Microbenching:
 
 ```{r,echo=TRUE,eval=TRUE}
 microbenchmark(mutate(data,returns_lag_4 = lag(returns,4)),
-                               shiftColumnDown(data,"returns",4))
+                      data.table(data)[, lag4 := shift(returns,4,type = "lag")],
+                      shiftColumnDown(data,"returns",4))
 ```
 
+This would return a dataframe such as:
+
+```{r,echo=FALSE,eval=TRUE}
+head(shiftColumnDown(data,"returns",4))
+```
+
+## Creating Multiple Lags
+
+This function is the natural extension of the previous lag function. This time instead of one lag calculated for a given n each lag up to n is calculated and added as a column.
+
+```
