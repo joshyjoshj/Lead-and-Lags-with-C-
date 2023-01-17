@@ -1,7 +1,6 @@
 Leads and Lags with C++
 ================
 Josh Bale
-2023-01-17
 
 ## Introduction
 
@@ -14,7 +13,10 @@ I will try and update these when I create a new function
 
 ## Lags
 
-``` rcpp
+This function lags a given column by n. I have called it
+‘shiftColumnDown’ as this is how I thought about it when coding it.
+
+``` cpp
 #include <Rcpp.h>
 using namespace Rcpp;
 
@@ -22,7 +24,7 @@ DataFrame shiftColumnDown(DataFrame df, std::string column, int n) {
   // Get the number of rows in the dataframe
   int nrow = df.nrows();
 
-  // Get the index of the column to be shifted
+  // Get the index of the columnn to be shifted
   int col_index = df.findName(column);
   
   // Create a new column to store the shifted values
@@ -31,9 +33,9 @@ DataFrame shiftColumnDown(DataFrame df, std::string column, int n) {
   // Get the column to be shifted as a numeric vector
   NumericVector col = as<NumericVector>(df[col_index]);
 
-  // Fill in the shifted column values
+  // fill in the shifted column values
   for (int i = 0; i < nrow; i++) {
-    // Check if the current row is less than "n"
+    // Check if the current row is less than n
     if (i < n) {
       shifted_column[i] = NA_REAL;
     } else {
@@ -48,3 +50,18 @@ DataFrame shiftColumnDown(DataFrame df, std::string column, int n) {
   return df;
 }
 ```
+
+Microbenching against ’dplyr::lag\`:
+
+``` r
+microbenchmark(mutate(data,returns_lag_4 = lag(returns,4)),
+                               shiftColumnDown(data,"returns",4))
+```
+
+    ## Unit: milliseconds
+    ##                                           expr      min       lq     mean
+    ##  mutate(data, returns_lag_4 = lag(returns, 4)) 6.299601 8.159600 9.506509
+    ##            shiftColumnDown(data, "returns", 4) 1.489300 2.239251 2.889154
+    ##    median        uq       max neval
+    ##  9.061751 10.926901 14.302401   100
+    ##  2.856751  3.242252  9.150001   100
