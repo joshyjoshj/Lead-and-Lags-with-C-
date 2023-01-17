@@ -208,7 +208,7 @@ microbenchmark(tidyAR::ar_df(data,y="returns",p=45),
                                shiftColumnDownMulti(data,"returns",45))
 ```
 
-As you can see my tidyAR package function is not very quick and I'm working on implementing these functions in the package to speed it up.
+As you can see my `tidyAR` package function is not very quick and I'm working on implementing these functions in the package to speed it up.
 
 This would return a dataframe such as:
 

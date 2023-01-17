@@ -59,15 +59,15 @@ microbenchmark(mutate(data,returns_lag_4 = lag(returns,4)),
                       shiftColumnDown(data,"returns",4))
 ```
 
-    ## Unit: milliseconds
+    ## Unit: microseconds
     ##                                                             expr      min
-    ##                    mutate(data, returns_lag_4 = lag(returns, 4)) 5.734501
-    ##  data.table(data)[, `:=`(lag4, shift(returns, 4, type = "lag"))] 3.098702
-    ##                              shiftColumnDown(data, "returns", 4) 1.464901
-    ##        lq      mean    median        uq       max neval
-    ##  9.052601 10.772530 10.527952 12.316051 18.296701   100
-    ##  4.646701  6.953574  6.354800  7.463801 45.149801   100
-    ##  2.350850  3.134992  3.041501  3.614152  9.350602   100
+    ##                    mutate(data, returns_lag_4 = lag(returns, 4)) 3196.101
+    ##  data.table(data)[, `:=`(lag4, shift(returns, 4, type = "lag"))] 1766.000
+    ##                              shiftColumnDown(data, "returns", 4)  846.501
+    ##        lq     mean   median       uq     max neval
+    ##  4520.051 8357.367 7181.151 9939.352 53534.9   100
+    ##  2650.751 6014.395 4653.002 6538.702 77026.7   100
+    ##  1234.151 3271.952 2210.551 3193.151 26024.7   100
 
 This would return a dataframe such as:
 
@@ -134,16 +134,16 @@ microbenchmark(tidyAR::ar_df(data,y="returns",p=45),
 ```
 
     ## Unit: milliseconds
-    ##                                          expr     min       lq     mean
-    ##    tidyAR::ar_df(data, y = "returns", p = 45) 26.1576 38.16110 53.42758
-    ##  tk_augment_lags(data, returns, .lags = 1:45) 26.6599 37.28965 43.25343
-    ##     shiftColumnDownMulti(data, "returns", 45) 11.0947 12.44180 15.99891
+    ##                                          expr     min        lq     mean
+    ##    tidyAR::ar_df(data, y = "returns", p = 45) 10.6527 35.838400 62.40181
+    ##  tk_augment_lags(data, returns, .lags = 1:45) 11.6855 34.303551 57.72326
+    ##     shiftColumnDownMulti(data, "returns", 45)  3.5628  9.700351 20.03619
     ##    median       uq      max neval
-    ##  43.92660 54.83705 686.6253   100
-    ##  39.91925 47.53980  67.2704   100
-    ##  14.02810 19.16485  32.1916   100
+    ##  53.09185 75.11720 307.1317   100
+    ##  48.37410 72.68800 218.4378   100
+    ##  15.89090 23.47645 164.3693   100
 
-As you can see my tidyAR package function is not very quick and I’m
+As you can see my `tidyAR` package function is not very quick and I’m
 working on implementing these functions in the package to speed it up.
 
 This would return a dataframe such as:
